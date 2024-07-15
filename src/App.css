@@ -1,0 +1,10 @@
+#root {
+  max-width: 1280px;
+  padding: 2rem;
+  display: flex;
+  column-gap: 10rem;
+}
+
+span {
+  font-weight: bolder;
+}
