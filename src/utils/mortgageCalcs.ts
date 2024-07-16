@@ -1,12 +1,10 @@
 import { getOriginationDate } from "./dates";
 
-const MONTHLY_INTEREST_RATE = import.meta.env.VITE_ORIGINAL_APR / 12 / 100;
-
-export function getLoanCalculations(originalBalance: number, numberOfPaymentsMade: number, monthlyPayment: number) {
+export function getLoanCalculations(originalBalance: number, numberOfPaymentsMade: number, monthlyPayment: number, APR: number) {
     let totalInterestPaid = 0;
     let balanceRemaining = originalBalance;
     for (let i = 0; i < numberOfPaymentsMade; i++) {
-        const monthlyInterest = balanceRemaining * MONTHLY_INTEREST_RATE;
+        const monthlyInterest = balanceRemaining * (APR / 12 / 100);
         totalInterestPaid = totalInterestPaid + monthlyInterest;
         balanceRemaining = balanceRemaining - (monthlyPayment - monthlyInterest)
     }

@@ -47,14 +47,16 @@ function App() {
     getLoanCalculations(
       Number(import.meta.env.VITE_ORIGINAL_LOAN_AMOUNT),
       getNumberOfPaymentsMade(getOriginationDate()),
-      Number(import.meta.env.VITE_ORIGINAL_MONTHLY_LOAN_PAYMENT)
+      Number(import.meta.env.VITE_ORIGINAL_MONTHLY_LOAN_PAYMENT),
+      Number(import.meta.env.VITE_ORIGINAL_APR),
     )
 
   const thirtyYearLoanInterest =
     getLoanCalculations(
       Number(import.meta.env.VITE_ORIGINAL_LOAN_AMOUNT),
       360,
-      Number(import.meta.env.VITE_ORIGINAL_MONTHLY_LOAN_PAYMENT)
+      Number(import.meta.env.VITE_ORIGINAL_MONTHLY_LOAN_PAYMENT),
+      Number(import.meta.env.VITE_ORIGINAL_APR),
     ).totalInterestPaid
 
   const refinancePayments = getRefiMonthlyPayment(balanceRemaining, selectedRefiRate, Number(refinanceTerms))
@@ -65,6 +67,7 @@ function App() {
       balanceRemaining * 1.03,
       Number(refinanceTerms) * 12,
       refinancePayments,
+      selectedRefiRate,
     ).totalInterestPaid
 
   const paymentsDifference = parseFloat(Math.abs(refinancePayments - Number(import.meta.env.VITE_ORIGINAL_MONTHLY_LOAN_PAYMENT)).toFixed(2))
