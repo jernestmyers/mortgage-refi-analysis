@@ -1,19 +1,20 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
-import { getFormattedOriginationDate, getLoanCalculations, getMonthlyPayment, getNumberOfPaymentsMade } from './utils/mortgageCalcs';
-import { formatNumberAsCurrency } from './utils/numbers';
+import { getLoanCalculations, getRefiMonthlyPayment, getNumberOfPaymentsMade } from './utils/mortgageCalcs';
 import { getOriginationDate } from './utils/dates';
+import { RefiDetails } from './components/RefiDetails';
+import { ComparisonDetails } from './components/ComparisonDetails';
+import { FreddieMacWidget } from './components/FreddieMacWidget';
+import { CurrentDetails } from './components/CurrentDetails';
 
 const RATES_COLUMN_REGEX = /<td>\s*([\d]+\.[\d]+)\s*<\/td>/g
 const RATE_REGEX = /([\d]+\.[\d]+)/
-const REFI_TERMS = ['30', '15'] as const
-type RefiTerm = typeof REFI_TERMS[number]
+export const REFI_TERMS = ['30', '15'] as const
+export type RefiTerm = typeof REFI_TERMS[number]
 
 function App() {
   const [aggregatedFreddieMacRates, setAggregatedFreddieMacRates] = useState<number[] | undefined>(undefined);
-  const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [refinanceTerms, setRefinanceTerms] = useState<RefiTerm>('30');
-  const selectedRefiRate = aggregatedFreddieMacRates ? refinanceTerms === '30' ? aggregatedFreddieMacRates[0] : aggregatedFreddieMacRates[1] : null
 
   useEffect(
     () => {
@@ -38,6 +39,10 @@ function App() {
     }, []
   )
 
+  if (!aggregatedFreddieMacRates) return;
+
+  const selectedRefiRate = refinanceTerms === '30' ? aggregatedFreddieMacRates[0] : aggregatedFreddieMacRates[1]
+
   const { totalInterestPaid, balanceRemaining } =
     getLoanCalculations(
       Number(import.meta.env.VITE_ORIGINAL_LOAN_AMOUNT),
@@ -52,49 +57,42 @@ function App() {
       Number(import.meta.env.VITE_ORIGINAL_MONTHLY_LOAN_PAYMENT)
     ).totalInterestPaid
 
+  const refinancePayments = getRefiMonthlyPayment(balanceRemaining, selectedRefiRate, Number(refinanceTerms))
+
+  const refinanceLoanInterest =
+    getLoanCalculations(
+      // account for the 3% cost of refinancing
+      balanceRemaining * 1.03,
+      Number(refinanceTerms) * 12,
+      refinancePayments,
+    ).totalInterestPaid
+
+  const paymentsDifference = parseFloat(Math.abs(refinancePayments - Number(import.meta.env.VITE_ORIGINAL_MONTHLY_LOAN_PAYMENT)).toFixed(2))
+  // add the interest we've already paid to the refi loan interest to account for the sunken interest costs from "restarting" a loan
+  const interestDifference = parseFloat(Math.abs(thirtyYearLoanInterest - (refinanceLoanInterest + totalInterestPaid)).toFixed(2))
+
   return (
     <>
+      <CurrentDetails
+        thirtyYearLoanInterest={thirtyYearLoanInterest}
+        balanceRemaining={balanceRemaining}
+        totalInterestPaid={totalInterestPaid}
+      />
       <div>
-        <div>
-          <h2>Current Loan Details:</h2>
-          <p><span>APR: </span>{import.meta.env.VITE_ORIGINAL_APR}%</p>
-          <p><span>Term: </span>{import.meta.env.VITE_ORIGINAL_TERM} years</p>
-          <p><span>Loan Amount: </span>{formatNumberAsCurrency(import.meta.env.VITE_ORIGINAL_LOAN_AMOUNT)}</p>
-          <p><span>Monthly Payment: </span>{formatNumberAsCurrency(import.meta.env.VITE_ORIGINAL_MONTHLY_LOAN_PAYMENT)}</p>
-          <p><span>Origination Date: </span>{getFormattedOriginationDate()}</p>
-          <p><span>30Y Interest: </span>{formatNumberAsCurrency(thirtyYearLoanInterest)}</p>
-        </div>
-        <div>
-          <h2>Current Payment Summary:</h2>
-          <p><span>Remaining Principal: </span>{formatNumberAsCurrency(balanceRemaining)}</p>
-          <p><span>Interest Paid: </span>{formatNumberAsCurrency(totalInterestPaid)}</p>
-        </div>
-      </div>
-      <div>
-        <iframe
-          ref={iframeRef}
-          src="https://www.freddiemac.com/pmms/pmmsthick.html"
-          title="Freddie Mac Weekly PMMS"
-          width="185"
-          height="175"
-          scrolling="no"
+        <FreddieMacWidget />
+        <RefiDetails
+          selectedRefiRate={selectedRefiRate}
+          refinanceTerms={refinanceTerms}
+          setRefinanceTerms={setRefinanceTerms}
+          refinancePayments={refinancePayments}
         />
-        {aggregatedFreddieMacRates && selectedRefiRate &&
-          (<div>
-            <h2>Refi Details:</h2>
-            <p><span>APR: </span>{selectedRefiRate}%</p>
-            <p><span>Term: </span>
-              {REFI_TERMS.map(term => (
-                <label key={term} htmlFor={term}>
-                  <input onChange={(e) => setRefinanceTerms(e.target.value as RefiTerm)} checked={term === refinanceTerms} type="radio" id={term} name="refiTerm" value={term} />
-                  {term}Y
-                </label>
-              ))}
-            </p>
-            <p><span>New Monthly Payment: </span>{formatNumberAsCurrency(getMonthlyPayment(balanceRemaining, selectedRefiRate, Number(refinanceTerms)).toString())}</p>
-          </div>)
-        }
       </div>
+      <ComparisonDetails
+        paymentsDifference={paymentsDifference}
+        interestDifference={interestDifference}
+        isRefiPaymentMore={refinancePayments > Number(import.meta.env.VITE_ORIGINAL_MONTHLY_LOAN_PAYMENT)}
+        isRefiInterestMore={refinanceLoanInterest > thirtyYearLoanInterest}
+      />
     </>
   )
 }
