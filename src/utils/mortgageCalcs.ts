@@ -11,8 +11,8 @@ export function getLoanCalculations(originalBalance: number, numberOfPaymentsMad
         balanceRemaining = balanceRemaining - (monthlyPayment - monthlyInterest)
     }
     return {
-        totalInterestPaid: totalInterestPaid.toFixed(2),
-        balanceRemaining: balanceRemaining.toFixed(2),
+        totalInterestPaid: parseFloat(totalInterestPaid.toFixed(2)),
+        balanceRemaining: parseFloat(balanceRemaining.toFixed(2)),
     }
 }
 
@@ -34,10 +34,10 @@ export function getFormattedOriginationDate() {
     return originationDateComponents[1] + ' ' + originationDateComponents[3]
 }
 
-export function getMonthlyPayment(loanAmount: string, APR: number, term: number) {
+export function getRefiMonthlyPayment(loanAmount: number, APR: number, term: number) {
     const i = APR / 12 / 100;
     const n = term * 12;
-    // refi costs range from 2 to 5 percent of loan cost, let's assume 3
-    const loanPlusFees = Number(loanAmount) * 1.03;
-    return (loanPlusFees * (i + (i / ((1 + i) ** n - 1)))).toFixed(2)
+    // refi costs range from 2 to 5 percent of loan cost; let's assume 3
+    const loanPlusFees = loanAmount * 1.03;
+    return parseFloat((loanPlusFees * (i + (i / ((1 + i) ** n - 1)))).toFixed(2))
 }

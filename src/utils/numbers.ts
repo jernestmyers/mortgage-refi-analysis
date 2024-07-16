@@ -1,10 +1,11 @@
-export function formatNumberAsCurrency(value: string) {
-    const hasDecimal = value.includes('.')
+export function formatNumberAsCurrency(value: number) {
+    const stringValue = value.toString();
+    const hasDecimal = stringValue.includes('.')
     if (hasDecimal) {
-        const splitValue = value.split('.')
+        const splitValue = stringValue.split('.')
         return '$' + addCommas(splitValue[0].split('')) + '.' + splitValue[1]
     } else {
-        return '$' + addCommas(value.split(''))
+        return '$' + addCommas(stringValue.split(''))
     }
 }
 
