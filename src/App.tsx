@@ -7,8 +7,8 @@ import { ComparisonDetails } from './components/ComparisonDetails';
 import { FreddieMacWidget } from './components/FreddieMacWidget';
 import { CurrentDetails } from './components/CurrentDetails';
 
-const RATES_COLUMN_REGEX = /<td>\s*([\d]+\.[\d]+)\s*<\/td>/g
-const RATE_REGEX = /([\d]+\.[\d]+)/
+const THIRTY_YEAR_RATE_REGEX = /30-year Fixed-Rate Mortgage\s*([\d]+\.[\d]+)%/
+const FIFTEEN_YEAR_RATE_REGEX = /15-year Fixed-Rate Mortgage\s*([\d]+\.[\d]+)%/
 export const REFI_TERMS = ['30', '15'] as const
 export type RefiTerm = typeof REFI_TERMS[number]
 
@@ -20,15 +20,13 @@ function App() {
     () => {
       async function getFreddieMacWidget() {
         try {
-          const freddieMacWidgetResponse = await fetch('https://corsproxy.io/?https://www.freddiemac.com/pmms/pmmsthin.html');
-          const widgetHtmlString = await freddieMacWidgetResponse.text();
-          const ratesCells = widgetHtmlString.match(RATES_COLUMN_REGEX)
-          const rates = ratesCells?.reduce((prev: number[] | undefined, curr: string) => {
-            const rate = curr.match(RATE_REGEX)
-            if (rate && prev) {
-              return prev.concat(Number(rate[0]))
-            }
-          }, [])
+          const freddieMacWidgetResponse = await fetch('https://r.jina.ai/https://www.freddiemac.com/pmms');
+          const widgetTextString = await freddieMacWidgetResponse.text();
+          const thirtyYearMatch = widgetTextString.match(THIRTY_YEAR_RATE_REGEX)
+          const fifteenYearMatch = widgetTextString.match(FIFTEEN_YEAR_RATE_REGEX)
+          const rates = thirtyYearMatch && fifteenYearMatch
+            ? [Number(thirtyYearMatch[1]), Number(fifteenYearMatch[1])]
+            : undefined
           setAggregatedFreddieMacRates(rates)
         } catch (err) {
           console.log(err)

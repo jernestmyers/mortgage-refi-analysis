@@ -1,11 +1,7 @@
 export function FreddieMacWidget() {
     return (
-        <iframe
-            src="https://www.freddiemac.com/pmms/pmmsthick.html"
-            title="Freddie Mac Weekly PMMS"
-            width="185"
-            height="175"
-            scrolling="no"
-        />
+        <a href="https://www.freddiemac.com/pmms" target="_blank" rel="noreferrer">
+            Freddie Mac Weekly PMMS
+        </a>
     )
 }
